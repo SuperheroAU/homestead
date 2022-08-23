@@ -8,16 +8,34 @@
 # to apply, you may also create user-customizations.sh,
 # which will be run after this script.
 
+if [ ! -f /usr/local/extra_homestead_software_installed ]; then
+	echo 'installing some extra software'
 
-# If you're not quite ready for the latest Node.js version,
-# uncomment these lines to roll back to a previous version
+    sudo apt install -y python2 php7.4-redis php7.4-decimal php8.0-redis php8.0-decimal
+    sudo phpenmod decimal
 
-# Remove current Node.js version:
-#sudo apt-get -y purge nodejs
-#sudo rm -rf /usr/lib/node_modules/npm/lib
-#sudo rm -rf //etc/apt/sources.list.d/nodesource.list
+    sudo update-alternatives --set php /usr/bin/php7.4
+    sudo update-alternatives --set php-config /usr/bin/php-config7.4
+    sudo update-alternatives --set phpize /usr/bin/phpize7.4
 
-# Install Node.js Version desired (i.e. v13)
-# More info: https://github.com/nodesource/distributions/blob/master/README.md#debinstall
-#curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
-#sudo apt-get install -y nodejs
+    sudo mv /usr/lib/php/8.1 /usr/lib/php/8.1-bak
+
+    #reduce openssl SECLEVEL to allow curl use md CA
+    sudo sed -i '0,/^/s//openssl_conf = default_conf\n/' /usr/lib/ssl/openssl.cnf
+    sudo sh -c 'cat <<EOT >> /usr/lib/ssl/openssl.cnf
+[ default_conf ]
+ssl_conf = ssl_sect
+
+[ssl_sect]
+system_default = system_default_sect
+
+[system_default_sect]
+MinProtocol = TLSv1.2
+CipherString = DEFAULT:@SECLEVEL=0
+EOT'
+
+    sudo touch /usr/local/extra_homestead_software_installed
+
+else
+    echo "extra software already installed... moving on..."
+fi

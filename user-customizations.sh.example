@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+if [ ! -f /usr/local/user_customizations_finished ]; then
+	echo 'running user user_customizations'
+    # add user customizations
+
+    sudo touch /usr/local/user_customizations_finished
+else
+    echo "user customizations already ran... moving on..."
+fi

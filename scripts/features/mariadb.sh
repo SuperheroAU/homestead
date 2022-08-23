@@ -34,7 +34,7 @@ rm -rf /var/log/mysql
 rm -rf /etc/mysql
 
 # Add Maria PPA
-curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --mariadb-server-version="mariadb-10.6.8"
 
 debconf-set-selections <<< "mariadb-server mysql-server/data-dir select ''"
 debconf-set-selections <<< "mariadb-server mysql-server/root_password password secret"
