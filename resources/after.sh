@@ -11,12 +11,12 @@
 if [ ! -f /usr/local/extra_homestead_software_installed ]; then
 	echo 'installing some extra software'
 
-    sudo apt install -y python2 php7.4-redis php7.4-decimal php8.0-redis php8.0-decimal
+    sudo apt install -y python2 php8.0-redis php8.0-decimal
     sudo phpenmod decimal
 
-    sudo update-alternatives --set php /usr/bin/php7.4
-    sudo update-alternatives --set php-config /usr/bin/php-config7.4
-    sudo update-alternatives --set phpize /usr/bin/phpize7.4
+    sudo update-alternatives --set php /usr/bin/php8.0
+    sudo update-alternatives --set php-config /usr/bin/php-config8.0
+    sudo update-alternatives --set phpize /usr/bin/phpize8.0
 
     sudo mv /usr/lib/php/8.1 /usr/lib/php/8.1-bak
 
