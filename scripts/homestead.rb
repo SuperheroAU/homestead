@@ -19,7 +19,7 @@ class Homestead
     config.vm.define settings['name'] ||= 'homestead'
     config.vm.box = settings['box'] ||= 'laravel/homestead'
     unless settings.has_key?('SpeakFriendAndEnter')
-      config.vm.box_version = settings['version'] ||= '>= 12.0.0, < 13.0.0'
+      config.vm.box_version = settings['version'] ||= '>= 13.0.0, < 14.0.0'
     end
     config.vm.hostname = settings['hostname'] ||= 'homestead'
 
@@ -45,6 +45,7 @@ class Homestead
       vb.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
       vb.customize ['modifyvm', :id, '--natdnshostresolver1', settings['natdnshostresolver'] ||= 'on']
       vb.customize ['modifyvm', :id, '--ostype', 'Ubuntu_64']
+
       if settings.has_key?('gui') && settings['gui']
         vb.gui = true
       end
@@ -53,6 +54,10 @@ class Homestead
       # the guest operating system.
       if settings.has_key?('paravirtprovider') && settings['paravirtprovider']
         vb.customize ['modifyvm', :id, '--paravirtprovider', settings['paravirtprovider'] ||= 'kvm']
+      end
+      
+      if Vagrant::Util::Platform.windows?
+        vb.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root", "1"]
       end
     end
 
@@ -101,6 +106,21 @@ class Homestead
       v.update_guest_tools = settings['update_parallels_tools'] ||= false
       v.memory = settings['memory'] ||= 2048
       v.cpus = settings['cpus'] ||= 1
+    end
+    
+    # Configure libvirt settings
+    config.vm.provider "libvirt" do |libvirt|
+      libvirt.default_prefix = ''
+      libvirt.memory = settings["memory"] ||= "2048"
+      libvirt.cpu_model = settings["cpus"] ||= "1"
+      libvirt.nested = "true"
+      libvirt.disk_bus = "virtio"
+      libvirt.machine_type = "q35"
+      libvirt.disk_driver :cache => "none"
+      libvirt.memorybacking :access, :mode => 'shared'
+      libvirt.nic_model_type = "virtio"
+      libvirt.driver = "kvm"
+      libvirt.qemu_use_session = false
     end
 
     # Standardize Ports Naming Schema
@@ -186,6 +206,10 @@ class Homestead
             folder['type'] = 'smb'
           end
 
+          if ENV['VAGRANT_DEFAULT_PROVIDER'] == 'libvirt'
+            folder['type'] ||= 'virtiofs'
+          end
+
           if folder['type'] == 'nfs'
             mount_opts = folder['mount_options'] ? folder['mount_options'] : ['actimeo=1', 'nolock']
           elsif folder['type'] == 'smb'
@@ -212,6 +236,11 @@ class Homestead
           end
         end
       end
+    end
+
+    # use virtiofs for /vagrant mount when using libvirt provider
+    if ENV['VAGRANT_DEFAULT_PROVIDER'] == 'libvirt'
+      config.vm.synced_folder "./", "/vagrant", type: "virtiofs"
     end
 
     # Change PHP CLI version based on configuration
@@ -378,7 +407,7 @@ class Homestead
               site['to'],                 # $2
               site['port'] ||= http_port, # $3
               site['ssl'] ||= https_port, # $4
-              site['php'] ||= '8.1',      # $5
+              site['php'] ||= '8.2',      # $5
               params ||= '',              # $6
               site['xhgui'] ||= '',       # $7
               site['exec'] ||= 'false',   # $8
@@ -523,13 +552,18 @@ class Homestead
         end
 
         config.vm.provision 'shell' do |s|
+          s.inline = "echo \"\nenv[$1] = '$2'\" >> /etc/php/8.2/fpm/pool.d/www.conf"
+          s.args = [var['key'], var['value']]
+        end
+
+        config.vm.provision 'shell' do |s|
           s.inline = "echo \"\n# Set Homestead Environment Variable\nexport $1=$2\" >> /home/vagrant/.profile"
           s.args = [var['key'], var['value']]
         end
       end
 
       config.vm.provision 'shell' do |s|
-        s.inline = 'service php5.6-fpm restart;service php7.0-fpm restart;service  php7.1-fpm restart; service php7.2-fpm restart; service php7.3-fpm restart; service php7.4-fpm restart; service php8.0-fpm restart; service php8.1-fpm restart;'
+        s.inline = 'service php5.6-fpm restart;service php7.0-fpm restart;service  php7.1-fpm restart; service php7.2-fpm restart; service php7.3-fpm restart; service php7.4-fpm restart; service php8.0-fpm restart; service php8.1-fpm restart; service php8.2-fpm restart;'
       end
     end
 
