@@ -20,6 +20,10 @@ if [ ! -f /usr/local/extra_homestead_software_installed ]; then
 
     sudo mv /usr/lib/php/8.1 /usr/lib/php/8.1-bak
 
+    sudo systemctl disable php8.2-fpm
+    sudo systemctl enable php8.0-fpm
+    sudo service php8.0-fpm restart
+
     #reduce openssl SECLEVEL to allow curl use md CA
     sudo sed -i '0,/^/s//openssl_conf = default_conf\n/' /usr/lib/ssl/openssl.cnf
     sudo sh -c 'cat <<EOT >> /usr/lib/ssl/openssl.cnf
